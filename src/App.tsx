@@ -1,7 +1,7 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthScreen } from "./screens/AuthScreen";
-import { Dashboard } from "./screens/Dashboard";
-import { OverlayChat } from "./screens/OverlayChat";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthScreen } from './screens/AuthScreen';
+import { Dashboard } from './screens/Dashboard';
+import { OverlayChat } from './screens/OverlayChat';
 
 function App() {
   return (
