@@ -8,10 +8,46 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #1F2937;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+    /* Formal neutral color palette */
+  --color-primary: #4b5563; /* Neutral gray */
+  --color-secondary: #6b7280; /* Cool gray */
+  --color-accent: #9ca3af; /* Gray accent */
+
+  /* Neutral tones */
+  --color-dark: #111827; /* Dark gray */
+  --color-dark-alt: #1f2937; /* Alternative dark */
+  --color-light: #f9fafb; /* Light gray */
+
+  /* Text */
+  --text-primary: #f3f4f6; /* Light gray */
+  --text-secondary: #d1d5db; /* Cool gray */
+  --text-accent: #9ca3af; /* Gray accent */
+
+  /* States */
+  --success: #10b981; /* Emerald */
+  --warning: #f59e0b; /* Amber */
+  --error: #ef4444; /* Red */
+
+  /* UI */
+  --spinner-color: #9ca3af;
+  --card-bg-rgb: 31 41 55; /* #1F2937 */
+  --card-stroke-rgb: 255 255 255; /* subtle white border */
+
+  --link: #8d8dff;
+
+  /* Navbar and footer with gradient */
+  --navbar: linear-gradient(90deg, #374151 0%, #4b5563 50%, #6b7280 100%);
+  --footer: linear-gradient(90deg, #4b5563 0%, #374151 50%, #1f2937 100%);
+
+  --gradient-color1: #111827;
+  --gradient-color2: #1f2937;
+
+  @apply text-white;
 }
