@@ -1,22 +1,23 @@
 "use strict";
 const electron = require("electron");
-electron.contextBridge.exposeInMainWorld("ipcRenderer", {
-  on(...args) {
-    const [channel, listener] = args;
-    return electron.ipcRenderer.on(channel, (event, ...args2) => listener(event, ...args2));
-  },
-  off(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.off(channel, ...omit);
-  },
-  send(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.send(channel, ...omit);
-  },
-  invoke(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.invoke(channel, ...omit);
+const electronHandler = {
+  ipcRenderer: {
+    sendMessage(channel, ...args) {
+      electron.ipcRenderer.send(channel, ...args);
+    },
+    on(channel, func) {
+      const subscription = (_event, ...args) => func(...args);
+      electron.ipcRenderer.on(channel, subscription);
+      return () => {
+        electron.ipcRenderer.removeListener(channel, subscription);
+      };
+    },
+    once(channel, func) {
+      electron.ipcRenderer.once(channel, (_event, ...args) => func(...args));
+    },
+    invoke(channel, ...args) {
+      return electron.ipcRenderer.invoke(channel, ...args);
+    }
   }
-  // You can expose other APTs you need here.
-  // ...
-});
+};
+electron.contextBridge.exposeInMainWorld("electron", electronHandler);
