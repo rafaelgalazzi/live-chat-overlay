@@ -31,7 +31,7 @@ export function AuthScreen() {
 
   useEffect(() => {
     verifyAuth();
-  }, []);
+  }, [verifyAuth]);
 
   if (isAutenticated) {
     navigate('/dashboard');
