@@ -2,9 +2,12 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { TwitchService } from './src/live/TwitchService';
+import { AuthService } from './src/auth/AuthService';
+import { HttpServer } from './src/server/HttpServer';
 
-// eslint-disable-next-line
 const require = createRequire(import.meta.url);
+require('dotenv').config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The built directory structure
@@ -22,13 +25,59 @@ process.env.APP_ROOT = path.join(__dirname, '..');
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
+export const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID || '';
+export const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || '';
+export const ELECTRON_STORE_KEY = process.env.ELECTRON_STORE_KEY || '';
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST;
 
 let win: BrowserWindow | null;
 
-ipcMain.on('test', (event, data) => {
-  event.reply('status', `Received data: ${data}`)
+const twitchService = new TwitchService(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, 'http://localhost:37250/auth/callback', [
+  'chat:read',
+  'chat:edit',
+]);
+const authService = new AuthService(ELECTRON_STORE_KEY);
+
+ipcMain.handle('oauth', async () => {
+  const authUrl = await twitchService.getAuthUrl();
+  const httpServer = new HttpServer(37250);
+
+  httpServer.start();
+
+  return new Promise((resolve, reject) => {
+    const win = new BrowserWindow({
+      width: 800,
+      height: 600,
+      webPreferences: { nodeIntegration: false },
+    });
+
+    win.loadURL(authUrl);
+
+    win.webContents.on('will-navigate', async (event, url) => {
+      if (url.startsWith('http://localhost:37250/auth/callback')) {
+        event.preventDefault();
+        const code = new URL(url).searchParams.get('code');
+        if (code) {
+          try {
+            await twitchService.exchangeCodeForToken(code);
+            const tokenInfo = twitchService.getTokenInfo();
+            if (tokenInfo) authService.saveAuthToken(tokenInfo.accessToken, tokenInfo.expiresAt);
+            resolve(true);
+          } catch (err) {
+            reject(err);
+          } finally {
+            httpServer.stop();
+          }
+        }
+        win.close();
+      }
+    });
+  });
+});
+
+ipcMain.handle('verifyAutentication', () => {
+  return authService.verifyAuth();
 });
 
 function createWindow() {
