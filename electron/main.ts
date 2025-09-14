@@ -7,8 +7,18 @@ import { AuthService } from './src/auth/AuthService';
 import { HttpServer } from './src/server/HttpServer';
 
 const require = createRequire(import.meta.url);
-require('dotenv').config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+let envPath: string;
+if (process.env.NODE_ENV === 'development') {
+  // Em dev, usa o arquivo .env da raiz do projeto
+  envPath = path.join(__dirname, '..', '.env');
+} else {
+  // Em produção, usa o arquivo .env copiado para resources/
+  envPath = path.join(process.resourcesPath, '.env');
+}
+
+require('dotenv').config({ path: envPath });
 
 process.env.APP_ROOT = path.join(__dirname, '..');
 
