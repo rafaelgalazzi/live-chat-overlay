@@ -1,12 +1,12 @@
-# Twitch Chat Overlay
+# Live Chat Overlay
 
-A lightweight, customizable overlay application that displays Twitch chat on top of your games or other applications. Perfect for streamers who want to monitor their chat while gaming with just one monitor.
+A lightweight, customizable overlay application that displays live chat on top of your games or other applications. Perfect for streamers who want to monitor their chat while gaming or working with just one monitor.
 
 ![Project Preview](./public/preview.png)
 
 ## Features
 
-- 🎮 **Always-On-Top Overlay**: Keeps Twitch chat visible above your games
+- 🎮 **Always-On-Top Overlay**: Keeps chat visible above your games or applications
 - 🖥️ **Electron Desktop App**: Runs independently of your browser
 - 🎨 **Customizable Appearance**: Adjust size, position, and transparency
 - 🔧 **Easy Setup**: Connect with your Twitch channel in seconds
@@ -19,6 +19,7 @@ A lightweight, customizable overlay application that displays Twitch chat on top
 - **[TypeScript](https://www.typescriptlang.org/)** - Typed JavaScript for better development experience
 - **[Vite](https://vitejs.dev/)** - Fast build tool and development server
 - **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework for styling
+- **[tmi.js](https://tmijs.com/)** - Twitch Messaging Interface library for connecting to Twitch chat
 
 ## Prerequisites
 
@@ -29,12 +30,12 @@ A lightweight, customizable overlay application that displays Twitch chat on top
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/twitch-chat-overlay.git
+   git clone <repository-url>
    ```
 
 2. Navigate to the project directory:
    ```bash
-   cd twitch-chat-overlay
+   cd live-chat-overlay
    ```
 
 3. Install dependencies:
@@ -66,38 +67,23 @@ npm run build
 yarn build
 ```
 
-To build the application for distribution:
-
-```bash
-npm run make
-# or
-yarn make
-```
-
-This will create distributable packages in the `dist` directory for your platform.
+This will create distributable packages for your platform.
 
 ## Usage
 
 1. Launch the application
-2. Click on "Connect with Twitch" button
-3. Authorize the application in your browser
-4. Enter your Twitch channel name
-5. Adjust the overlay position and settings as needed
-6. Start gaming while keeping chat visible!
+2. Click on "Login" to authenticate with Twitch
+3. Enter your Twitch channel name
+4. Adjust the overlay position and settings as needed
+5. Start gaming while keeping chat visible!
 
 ## Configuration
 
-The application creates a configuration file at:
+The application uses electron-store for configuration management. Settings are stored in the following locations:
 
-- **Windows**: `%APPDATA%\twitch-chat-overlay\config.json`
-- **macOS**: `~/Library/Application Support/twitch-chat-overlay/config.json`
-- **Linux**: `~/.config/twitch-chat-overlay/config.json`
-
-You can manually edit this file to adjust settings like:
-- Window position and size
-- Transparency level
-- Chat message limit
-- Notification preferences
+- **Windows**: `%APPDATA%\live-chat-overlay\`
+- **macOS**: `~/Library/Application Support/live-chat-overlay/`
+- **Linux**: `~/.config/live-chat-overlay/`
 
 ## Contributing
 
@@ -111,18 +97,10 @@ Contributions are welcome! Please follow these steps:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
 
 ## Acknowledgments
 
 - Thanks to the Twitch API for making this project possible
 - Inspired by streamers who need better chat monitoring solutions
 - Built with the amazing open-source tools listed in the tech stack
-
-## Support
-
-If you encounter any issues or have feature requests, please [open an issue](https://github.com/your-username/twitch-chat-overlay/issues) on GitHub.
-
----
-
-Made with ❤️ for streamers everywhere
