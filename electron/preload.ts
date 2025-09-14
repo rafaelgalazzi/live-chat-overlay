@@ -2,7 +2,7 @@
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
  
-export type Channels = 'oauth' | 'verifyAutentication';
+export type Channels = 'oauth' | 'verifyAutentication' | 'start-chat' | 'update-chat' | 'stop-chat';
 
 const electronHandler = {
     sendMessage(channel: Channels, ...args: unknown[]) {

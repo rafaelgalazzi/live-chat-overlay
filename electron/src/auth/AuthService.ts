@@ -11,10 +11,20 @@ export class AuthService {
   private expiresKey: keyof AuthData = 'twitch_oauth_expires';
 
   constructor(encryptionKey: string) {
-    this.store = new Store<AuthData>({
-      name: 'auth-store',
-      encryptionKey: encryptionKey || 'a_really_strong_password',
-    });
+    try {
+      this.store = new Store<AuthData>({
+        name: 'auth-store',
+        encryptionKey: encryptionKey || 'a_really_strong_password',
+      });
+    } catch (error) {
+      console.error('Auth store corrupted. Resetting...', error);
+      this.store = new Store<AuthData>({
+        name: 'auth-store',
+        encryptionKey: encryptionKey || 'a_really_strong_password',
+        clearInvalidConfig: true,
+      });
+    }
+    console.log('Auth store ready.');
   }
 
   saveAuthToken(token: string, expiresAt: number) {

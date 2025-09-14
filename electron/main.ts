@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -10,15 +10,6 @@ const require = createRequire(import.meta.url);
 require('dotenv').config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// The built directory structure
-//
-// ├─┬─┬ dist
-// │ │ └── index.html
-// │ │
-// │ ├─┬ dist-electron
-// │ │ ├── main.js
-// │ │ └── preload.mjs
-// │
 process.env.APP_ROOT = path.join(__dirname, '..');
 
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
@@ -27,17 +18,27 @@ export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
 export const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID || '';
 export const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || '';
+export const TWITCH_APP_NAME = process.env.TWITCH_APP_NAME || '';
 export const ELECTRON_STORE_KEY = process.env.ELECTRON_STORE_KEY || '';
 
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST;
 
 let win: BrowserWindow | null;
+let chatWindow: BrowserWindow | null = null;
 
-const twitchService = new TwitchService(TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, 'http://localhost:37250/auth/callback', [
-  'chat:read',
-  'chat:edit',
-]);
+// usamos o mesmo preload para todas as janelas
+const preloadPath = path.join(__dirname, 'preload.mjs');
+
 const authService = new AuthService(ELECTRON_STORE_KEY);
+
+const twitchService = new TwitchService(
+  TWITCH_CLIENT_ID,
+  TWITCH_CLIENT_SECRET,
+  TWITCH_APP_NAME,
+  authService,
+  'http://localhost:37250/auth/callback',
+  ['chat:read', 'chat:edit']
+);
 
 ipcMain.handle('oauth', async () => {
   const authUrl = await twitchService.getAuthUrl();
@@ -49,6 +50,7 @@ ipcMain.handle('oauth', async () => {
     const win = new BrowserWindow({
       width: 800,
       height: 600,
+      center: true,
       webPreferences: { nodeIntegration: false },
     });
 
@@ -61,8 +63,6 @@ ipcMain.handle('oauth', async () => {
         if (code) {
           try {
             await twitchService.exchangeCodeForToken(code);
-            const tokenInfo = twitchService.getTokenInfo();
-            if (tokenInfo) authService.saveAuthToken(tokenInfo.accessToken, tokenInfo.expiresAt);
             resolve(true);
           } catch (err) {
             reject(err);
@@ -80,15 +80,137 @@ ipcMain.handle('verifyAutentication', () => {
   return authService.verifyAuth();
 });
 
+function createChatWindow(route = '/overlay') {
+  if (chatWindow) return chatWindow;
+
+  const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+  const winWidth = 500;
+  const winHeight = 600;
+
+  chatWindow = new BrowserWindow({
+    width: winWidth,
+    height: winHeight,
+    x: screenWidth - winWidth, // posição para canto direito
+    y: 0, // canto superior
+    center: true,
+    show: false,
+    frame: false, // sem borda
+    transparent: true, // fundo transparente
+    alwaysOnTop: true, // sempre no topo
+    skipTaskbar: true, // não aparece na barra de tarefas
+    focusable: false, // não pode receber foco
+    hasShadow: false, // remove sombra (opcional)
+    webPreferences: {
+      preload: preloadPath,
+    },
+  });
+
+  if (VITE_DEV_SERVER_URL) {
+    chatWindow.loadURL(`${VITE_DEV_SERVER_URL}#${route}`);
+  } else {
+    chatWindow.loadFile(path.join(RENDERER_DIST, 'index.html'), {
+      hash: route.replace(/^\//, ''),
+    });
+  }
+
+  chatWindow.once('ready-to-show', () => {
+    if (chatWindow) {
+      chatWindow.show();
+      chatWindow.setIgnoreMouseEvents(true, { forward: true }); // sem interação
+    }
+  });
+
+  chatWindow.on('closed', () => {
+    chatWindow = null;
+  });
+
+  return chatWindow;
+}
+
+ipcMain.handle('start-chat', (_, data: { username: string }) => {
+  const chatClient = twitchService.startTmiClient(data.username);
+  if (!chatClient) return;
+
+  chatClient.connect();
+
+  console.log('Chat connected!');
+
+  chatWindow = createChatWindow();
+  chatWindow.setOpacity(0.6);
+
+  chatClient.on('message', (channel, tags, message, self) => {
+    if (self) return;
+    chatWindow?.webContents.send('update-chat', { message, tags });
+  });
+});
+
+ipcMain.handle('stop-chat', () => {
+  twitchService.stopTmiClient();
+  if (chatWindow) {
+    chatWindow.close();
+    chatWindow = null;
+  }
+});
+
+ipcMain.handle('get-badges-map', async (_event, { broadcasterId }: { broadcasterId?: string }) => {
+  const accessToken = authService.getAuthToken();
+  if (!accessToken) return {};
+
+  const headers = {
+    'Client-Id': TWITCH_CLIENT_ID,
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  interface BadgeVersion {
+    id: string;
+    image_url_1x?: string;
+    image_url_2x?: string;
+    image_url_4x?: string;
+  }
+
+  interface BadgeSet {
+    set_id: string;
+    versions: BadgeVersion[];
+  }
+
+  interface BadgesResponse {
+    data: BadgeSet[];
+  }
+
+  const globalRes = await fetch('https://api.twitch.tv/helix/chat/badges/global', { headers });
+  const globalJson: BadgesResponse = await globalRes.json();
+
+  let channelJson: BadgesResponse = { data: [] };
+  if (broadcasterId) {
+    const chanRes = await fetch(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${broadcasterId}`, { headers });
+    channelJson = await chanRes.json();
+  }
+
+  type BadgeMap = Record<string, string>;
+  const map: BadgeMap = {};
+
+  const merge = (sets: BadgeSet[]) => {
+    for (const set of sets) {
+      for (const v of set.versions ?? []) {
+        map[`${set.set_id}/${v.id}`] = v.image_url_1x ?? v.image_url_2x ?? v.image_url_4x ?? '';
+      }
+    }
+  };
+
+  merge(globalJson.data ?? []);
+  merge(channelJson.data ?? []);
+
+  return map;
+});
+
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: preloadPath,
     },
   });
 
-  // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString());
   });
@@ -96,14 +218,10 @@ function createWindow() {
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
   } else {
-    // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'));
   }
 }
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
@@ -112,8 +230,6 @@ app.on('window-all-closed', () => {
 });
 
 app.on('activate', () => {
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }

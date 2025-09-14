@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "axios": "^1.12.1",
+    "bufferutil": "^4.0.9",
     "dotenv": "^17.2.2",
     "electron-store": "^10.1.0",
     "lucide-react": "^0.541.0",
@@ -20,12 +21,14 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.8.2",
     "tmi.js": "^1.8.5",
+    "utf-8-validate": "^6.0.5",
     "zod": "^4.0.14"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
+    "@types/tmi.js": "^1.8.6",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
     "@typescript-eslint/parser": "^7.1.1",
     "@vitejs/plugin-react": "^4.2.1",

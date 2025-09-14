@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { HttpHandler } from '../api/HttpHandler';
+import tmi, { type Client } from 'tmi.js';
+import { AuthService } from '../auth/AuthService';
 
 interface TokenResponse {
   access_token: string;
@@ -12,15 +14,25 @@ interface TokenResponse {
 export class TwitchService {
   private clientId: string;
   private clientSecret: string;
+  private appName: string;
   private redirectUri: string;
   private scopes: string[];
   private codeVerifier: string = '';
-  private accessToken: string = '';
-  private expiresAt: number = 0;
+  private tmiClient: Client | null = null;
+  private authService: AuthService;
 
-  constructor(clientId: string, clientSecret: string, redirectUri: string, scopes: string[]) {
+  constructor(
+    clientId: string,
+    clientSecret: string,
+    appName: string,
+    authService: AuthService,
+    redirectUri: string,
+    scopes: string[]
+  ) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
+    this.appName = appName;
+    this.authService = authService;
     this.redirectUri = redirectUri;
     this.scopes = scopes;
   }
@@ -57,38 +69,50 @@ export class TwitchService {
         { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
       );
 
-      this.accessToken = response.data.access_token;
-      this.expiresAt = Date.now() + response.data.expires_in * 1000;
+      this.authService.saveAuthToken(response.data.access_token, Date.now() + response.data.expires_in * 1000);
     } catch (err) {
       console.error('Error by try to change code for token:', err);
       throw err;
     }
   }
 
-  getToken(): string | null {
-    if (this.accessToken && Date.now() < this.expiresAt) {
-      return this.accessToken;
-    }
-    return null;
-  }
-
-  getTokenInfo(): { accessToken: string; expiresAt: number } | null {
-    if (this.accessToken && Date.now() < this.expiresAt) {
-      return { accessToken: this.accessToken, expiresAt: this.expiresAt };
-    }
-    return null;
-  }
-
   async getUserInfo() {
-    if (!this.getToken()) throw new Error('User not autenticated!');
+    if (!this.authService.getAuthToken()) throw new Error('User not autenticated!');
 
     const response = await HttpHandler.get('https://api.twitch.tv/helix/users', {
       headers: {
         'Client-ID': this.clientId,
-        Authorization: `Bearer ${this.accessToken}`,
+        Authorization: `Bearer ${this.authService.getAuthToken()}`,
       },
     });
 
     return response.data;
+  }
+
+  startTmiClient(username: string): Client | null {
+    if (!this.appName || !this.authService.getAuthToken()) {
+      console.log('Erro by starting the chat!');
+      return null;
+    }
+
+    this.tmiClient = new tmi.Client({
+      options: { debug: false },
+      identity: {
+        username: this.appName,
+        password: `oauth:${this.authService.getAuthToken()}`,
+      },
+      channels: [username],
+    });
+
+    return this.tmiClient;
+  }
+
+  stopTmiClient() {
+    if (!this.tmiClient) {
+      console.log('No tmi client running!');
+      return;
+    }
+    this.tmiClient.disconnect();
+    this.tmiClient = null;
   }
 }

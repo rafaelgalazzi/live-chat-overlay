@@ -20,7 +20,7 @@ export function BaseInput<T extends FieldValues>({
   onChange,
   label,
   placeholder,
-  type,
+  type= 'text',
   autocomplete = 'off',
   error,
 }: BaseInputProps<T>) {

@@ -51,15 +51,17 @@ export function useElectron() {
    * @param callback Função chamada quando o evento ocorrer
    * @returns Função para remover o listener
    */
-  const on = useCallback((channel: string, callback: (...args: unknown[]) => void) => {
+  const on = useCallback(<T>(channel: string, callback: (data: T) => void) => {
     if (!window.electron || typeof window.electron.on !== 'function') {
       console.error('Electron API não disponível. Verifique o preload.js.');
       return () => {};
     }
 
-    return window.electron.on(channel, callback);
+    return window.electron.on(channel, (...args: unknown[]) => {
+      const [data] = args;
+      callback(data as T);
+    });
   }, []);
-
   /**
    * Escuta apenas o primeiro evento e remove
    * @param channel Canal para escutar mensagens do backend
