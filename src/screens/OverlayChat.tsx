@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { BaseChat, ChatMessage } from '../components/Chat/BaseChat';
-import { BaseLayout } from '../components/Layout/BaseLayout';
 import { useElectron } from '../hooks/useElectron';
 
 export function OverlayChat() {
@@ -16,8 +15,8 @@ export function OverlayChat() {
   }, [on, messages]);
 
   return (
-    <BaseLayout>
+    <div className='flex h-full'>
       <BaseChat messages={messages}></BaseChat>
-    </BaseLayout>
+    </div>
   );
 }

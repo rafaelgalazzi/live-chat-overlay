@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, ipcMain, screen, Menu } from 'electron';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -95,7 +95,7 @@ function createChatWindow(route = '/overlay') {
 
   const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
   const winWidth = 500;
-  const winHeight = 600;
+  const winHeight = 500;
 
   chatWindow = new BrowserWindow({
     width: winWidth,
@@ -114,6 +114,8 @@ function createChatWindow(route = '/overlay') {
       preload: preloadPath,
     },
   });
+
+  // chatWindow.setContentProtection(true);
 
   if (VITE_DEV_SERVER_URL) {
     chatWindow.loadURL(`${VITE_DEV_SERVER_URL}#${route}`);
@@ -221,9 +223,19 @@ function createWindow() {
     },
   });
 
+  // Close the chat window if the main window is closed
+  win.on('close', () => {
+    if (chatWindow) {
+      chatWindow.close();
+      chatWindow = null;
+    }
+  });
+
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString());
   });
+
+  if(!VITE_DEV_SERVER_URL) Menu.setApplicationMenu(null);
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
