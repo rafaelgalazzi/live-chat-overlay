@@ -138,7 +138,7 @@ ipcMain.handle('start-chat', (_, data: { username: string }) => {
   chatWindow = createChatWindow();
   chatWindow.setOpacity(0.6);
 
-  chatClient.on('message', (channel, tags, message, self) => {
+  chatClient.on('message', (_, tags, message, self) => {
     if (self) return;
     chatWindow?.webContents.send('update-chat', { message, tags });
   });
