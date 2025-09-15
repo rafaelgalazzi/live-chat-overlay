@@ -5,19 +5,16 @@ import { BaseLayout } from '../components/Layout/BaseLayout';
 import BaseText from '../components/Text/BaseText';
 import { useElectron } from '../hooks/useElectron';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export function AuthScreen() {
-  const [isAutenticated, setIsAutenticated] = useState(false);
   const [loginBtnLoading, setLoginBtnLoading] = useState(false);
   const { invoke } = useElectron();
+  const { verifyAuth, isAuthenticated } = useAuth();
+
   const navigate = useNavigate();
 
-  async function verifyAuth() {
-    const response = await invoke<undefined, boolean>('verifyAutentication');
-    setIsAutenticated(!!response);
-  }
-
-  async function handleAutentication() {
+  async function handleAuthentication() {
     setLoginBtnLoading(true);
     try {
       await invoke('oauth');
@@ -33,7 +30,11 @@ export function AuthScreen() {
     verifyAuth();
   });
 
-  if (isAutenticated) {
+  if (isAuthenticated) {
+    navigate('/dashboard');
+  }
+
+  function handleUseOnlyTiktok() {
     navigate('/dashboard');
   }
 
@@ -41,12 +42,16 @@ export function AuthScreen() {
     <BaseLayout>
       <BaseCard className="min-h-[400px] flex flex-col justify-center">
         <div>
-          <BaseText className="text-2xl">Click to Autenticate in Twitch</BaseText>
-          <BaseText className="text-sm">Click to Autenticate in Twitch</BaseText>
+          <BaseText className="text-2xl">Click to Authenticate in Twitch</BaseText>
         </div>
         <div className="flex justify-center my-5">
-          <BaseButton onClick={handleAutentication} loading={loginBtnLoading}>
-            Login
+          <BaseButton onClick={handleAuthentication} loading={loginBtnLoading}>
+            Login on Twitch
+          </BaseButton>
+        </div>
+        <div className="flex justify-center my-5">
+          <BaseButton onClick={handleUseOnlyTiktok} loading={loginBtnLoading}>
+            Use only the Tiktok
           </BaseButton>
         </div>
       </BaseCard>

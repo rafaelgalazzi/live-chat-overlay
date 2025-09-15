@@ -90,7 +90,7 @@ ipcMain.handle('oauth', async () => {
   });
 });
 
-ipcMain.handle('verifyAutentication', () => {
+ipcMain.handle('verifyAuthentication', () => {
   return authService.verifyAuth();
 });
 

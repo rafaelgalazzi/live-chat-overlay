@@ -77,7 +77,7 @@ export class TwitchService {
   }
 
   async getUserInfo() {
-    if (!this.authService.getAuthToken()) throw new Error('User not autenticated!');
+    if (!this.authService.getAuthToken()) throw new Error('User not authenticated !');
 
     const response = await HttpHandler.get('https://api.twitch.tv/helix/users', {
       headers: {
