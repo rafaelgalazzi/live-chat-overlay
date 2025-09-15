@@ -7,6 +7,7 @@ export interface ChatMessage {
 }
 
 type BadgeMap = Record<string, string>;
+type EmoteMap = Record<string, string>;
 
 interface BaseChatProps {
   messages: ChatMessage[];
@@ -15,9 +16,10 @@ interface BaseChatProps {
 
 export function BaseChat({ messages, broadcasterId }: BaseChatProps) {
   const [badgeMap, setBadgeMap] = useState<BadgeMap>({});
+  const [emoteMap, setEmoteMap] = useState<EmoteMap>({});
   const chatRef = useRef<HTMLDivElement>(null);
 
-  // injeta o CSS para esconder scrollbar
+  // Injeta CSS para esconder scrollbar
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
@@ -30,17 +32,19 @@ export function BaseChat({ messages, broadcasterId }: BaseChatProps) {
     };
   }, []);
 
-  // carrega catálogo uma vez
+  // Carrega badges e emotes uma vez
   useEffect(() => {
     (async () => {
-      const map = await window.electron.invoke<{ broadcasterId?: string }, BadgeMap>('get-badges-map', {
-        broadcasterId,
-      });
-      if (map) setBadgeMap(map);
+      const [badges, emotes] = await Promise.all([
+        window.electron.invoke<undefined, BadgeMap>('get-badges-map'),
+        window.electron.invoke<undefined, EmoteMap>('get-emotes-map'),
+      ]);
+      if (badges) setBadgeMap(badges);
+      if (emotes) setEmoteMap(emotes);
     })();
   }, [broadcasterId]);
 
-  // scroll automático quando novas mensagens chegam
+  // Scroll automático quando novas mensagens chegam
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -64,13 +68,15 @@ export function BaseChat({ messages, broadcasterId }: BaseChatProps) {
             )}
             <span style={{ ...styles.nick, color: nameColor }}>{username}</span>
             <span style={styles.colon}>:</span>
-            <span style={styles.msg}>{msg.message}</span>
+            <span style={styles.msg}>{parseMessageWithEmotes(msg.message, emoteMap)}</span>
           </div>
         );
       })}
     </div>
   );
 }
+
+// -------------------- Funções utilitárias --------------------
 
 function getBadgeImagesFromTags(tags: ChatUserstate, badgeMap: Record<string, string>) {
   const out: string[] = [];
@@ -81,6 +87,16 @@ function getBadgeImagesFromTags(tags: ChatUserstate, badgeMap: Record<string, st
     if (img) out.push(img);
   }
   return out;
+}
+
+function parseMessageWithEmotes(message: string, emoteMap: Record<string, string>) {
+  // Separa por espaços e substitui palavras que são emotes
+  return message.split(/\s+/).map((word, idx) => {
+    if (emoteMap[word]) {
+      return <img key={idx} src={emoteMap[word]} alt={word} style={{ height: '1.2em' }} />;
+    }
+    return <span key={idx}>{word} </span>;
+  });
 }
 
 function colorFromUsername(name: string) {
@@ -114,14 +130,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 14,
     width: 500,
     height: 500,
-    overflowY: 'auto', // mantém o scroll
+    overflowY: 'auto',
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
   },
   line: {
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     lineHeight: 1.35,
     wordBreak: 'break-word',
     flexShrink: 0,
@@ -136,11 +152,16 @@ const styles: Record<string, React.CSSProperties> = {
     textOverflow: 'ellipsis',
     maxWidth: 150,
     display: 'inline-block',
+    verticalAlign: 'top',
   },
   colon: { opacity: 0.8, marginRight: 4 },
   msg: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
     flex: 1,
+    gap: 2, // opcional: dá um espacinho entre emotes e texto
   },
 };

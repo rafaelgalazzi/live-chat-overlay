@@ -115,4 +115,24 @@ export class TwitchService {
     this.tmiClient.disconnect();
     this.tmiClient = null;
   }
+
+  async getBroadcasterId(channelName: string): Promise<string | null> {
+    const headers = {
+      'Client-Id': this.clientId,
+      Authorization: `Bearer ${this.authService.getAuthToken()}`,
+    };
+
+    try {
+      const { data } = await HttpHandler.get<{ data: { id: string; login: string }[] }>(
+        `https://api.twitch.tv/helix/users?login=${channelName}`,
+        { headers }
+      );
+
+      // Se existir usuário, retorna o primeiro ID
+      return data.data?.[0]?.id || null;
+    } catch (err) {
+      console.error('[getBroadcasterId] Erro ao buscar usuário:', err);
+      return null;
+    }
+  }
 }

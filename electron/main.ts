@@ -5,6 +5,8 @@ import path from 'node:path';
 import { TwitchService } from './src/live/TwitchService';
 import { AuthService } from './src/auth/AuthService';
 import { HttpServer } from './src/server/HttpServer';
+import { TwitchEmoteService } from './src/live/TwitchEmoteService';
+import { appState } from './src/state/AplicationState';
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -40,6 +42,8 @@ let chatWindow: BrowserWindow | null = null;
 const preloadPath = path.join(__dirname, 'preload.mjs');
 
 const authService = new AuthService(ELECTRON_STORE_KEY);
+
+const emoteService = new TwitchEmoteService(TWITCH_CLIENT_ID, authService);
 
 const twitchService = new TwitchService(
   TWITCH_CLIENT_ID,
@@ -139,9 +143,13 @@ function createChatWindow(route = '/overlay') {
   return chatWindow;
 }
 
-ipcMain.handle('start-chat', (_, data: { username: string }) => {
+ipcMain.handle('start-chat', async (_, data: { username: string }) => {
+  appState.setState({ channel: data.username });
   const chatClient = twitchService.startTmiClient(data.username);
   if (!chatClient) return;
+
+  const broadcasterId = await twitchService.getBroadcasterId(data.username);
+  if (broadcasterId) appState.setState({ broadcasterId });
 
   chatClient.connect();
 
@@ -162,57 +170,23 @@ ipcMain.handle('stop-chat', () => {
     chatWindow.close();
     chatWindow = null;
   }
+  appState.reset();
 });
 
-ipcMain.handle('get-badges-map', async (_event, { broadcasterId }: { broadcasterId?: string }) => {
+ipcMain.handle('get-badges-map', async () => {
   const accessToken = authService.getAuthToken();
-  if (!accessToken) return {};
+  const { broadcasterId } = appState.getState();
+  if (!accessToken || !broadcasterId) return {};
 
-  const headers = {
-    'Client-Id': TWITCH_CLIENT_ID,
-    Authorization: `Bearer ${accessToken}`,
-  };
+  return await emoteService.getAllChannelBadges(broadcasterId);
+});
 
-  interface BadgeVersion {
-    id: string;
-    image_url_1x?: string;
-    image_url_2x?: string;
-    image_url_4x?: string;
-  }
+ipcMain.handle('get-emotes-map', async () => {
+  const accessToken = authService.getAuthToken();
+  const { broadcasterId } = appState.getState();
+  if (!accessToken || !broadcasterId) return {};
 
-  interface BadgeSet {
-    set_id: string;
-    versions: BadgeVersion[];
-  }
-
-  interface BadgesResponse {
-    data: BadgeSet[];
-  }
-
-  const globalRes = await fetch('https://api.twitch.tv/helix/chat/badges/global', { headers });
-  const globalJson: BadgesResponse = await globalRes.json();
-
-  let channelJson: BadgesResponse = { data: [] };
-  if (broadcasterId) {
-    const chanRes = await fetch(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${broadcasterId}`, { headers });
-    channelJson = await chanRes.json();
-  }
-
-  type BadgeMap = Record<string, string>;
-  const map: BadgeMap = {};
-
-  const merge = (sets: BadgeSet[]) => {
-    for (const set of sets) {
-      for (const v of set.versions ?? []) {
-        map[`${set.set_id}/${v.id}`] = v.image_url_1x ?? v.image_url_2x ?? v.image_url_4x ?? '';
-      }
-    }
-  };
-
-  merge(globalJson.data ?? []);
-  merge(channelJson.data ?? []);
-
-  return map;
+  return await emoteService.getAllChannelEmotes(broadcasterId);
 });
 
 function createWindow() {
@@ -235,7 +209,7 @@ function createWindow() {
     win?.webContents.send('main-process-message', new Date().toLocaleString());
   });
 
-  if(!VITE_DEV_SERVER_URL) Menu.setApplicationMenu(null);
+  if (!VITE_DEV_SERVER_URL) Menu.setApplicationMenu(null);
 
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
