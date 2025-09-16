@@ -1,11 +1,13 @@
 type StateData = {
-  channel: string | null;
+  twitchChannel: string | null;
+  tiktokChannel: string | null;
   broadcasterId: string | null;
 };
 
 export class ApplicationState {
   private state: StateData = {
-    channel: null,
+    twitchChannel: null,
+    tiktokChannel: null,
     broadcasterId: null,
   };
 
@@ -18,7 +20,7 @@ export class ApplicationState {
   }
 
   public reset() {
-    this.state = { channel: null, broadcasterId: null };
+    this.state = { twitchChannel: null, tiktokChannel: null, broadcasterId: null };
   }
 }
 

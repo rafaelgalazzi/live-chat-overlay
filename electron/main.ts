@@ -7,16 +7,16 @@ import { AuthService } from './src/auth/AuthService';
 import { HttpServer } from './src/server/HttpServer';
 import { TwitchEmoteService } from './src/live/TwitchEmoteService';
 import { appState } from './src/state/AplicationState';
+import { TikTokService } from './src/live/TikTokService';
+import { WebcastEvent } from 'tiktok-live-connector';
 
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let envPath: string;
 if (process.env.NODE_ENV === 'development') {
-  // Em dev, usa o arquivo .env da raiz do projeto
   envPath = path.join(__dirname, '..', '.env');
 } else {
-  // Em produção, usa o arquivo .env copiado para resources/
   envPath = path.join(process.resourcesPath, '.env');
 }
 
@@ -24,7 +24,6 @@ require('dotenv').config({ path: envPath });
 
 process.env.APP_ROOT = path.join(__dirname, '..');
 
-// 🚧 Use ['ENV_NAME'] avoid vite:define plugin - Vite@2.x
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
@@ -38,7 +37,6 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win: BrowserWindow | null;
 let chatWindow: BrowserWindow | null = null;
 
-// usamos o mesmo preload para todas as janelas
 const preloadPath = path.join(__dirname, 'preload.mjs');
 
 const authService = new AuthService(ELECTRON_STORE_KEY);
@@ -53,6 +51,8 @@ const twitchService = new TwitchService(
   'http://localhost:37250/auth/callback',
   ['chat:read', 'chat:edit']
 );
+
+const tikTokService = new TikTokService();
 
 ipcMain.handle('oauth', async () => {
   const authUrl = await twitchService.getAuthUrl();
@@ -137,7 +137,7 @@ function createChatWindow(route = '/overlay') {
   chatWindow.once('ready-to-show', () => {
     if (chatWindow) {
       chatWindow.show();
-      chatWindow.setIgnoreMouseEvents(true, { forward: true }); // sem interação
+      chatWindow.setIgnoreMouseEvents(true, { forward: true });
     }
   });
 
@@ -148,29 +148,54 @@ function createChatWindow(route = '/overlay') {
   return chatWindow;
 }
 
-ipcMain.handle('start-chat', async (_, data: { twitchUserName: string; tiktokUsername: string }) => {
-  appState.setState({ channel: data.twitchUserName });
-  const chatClient = twitchService.startTmiClient(data.twitchUserName);
-  if (!chatClient) return;
+async function handleTwitchChat(username: string) {
+  const twitchChatClient = twitchService.startTmiClient(username);
+  const broadcasterId = await twitchService.getBroadcasterId(username);
+  if (!twitchChatClient) return;
+  appState.setState({ twitchChannel: username });
 
-  const broadcasterId = await twitchService.getBroadcasterId(data.twitchUserName);
   if (broadcasterId) appState.setState({ broadcasterId });
+  twitchChatClient.connect();
+  console.log('Twitch Chat connected!');
+  twitchChatClient.on('message', (_, tags, message, self) => {
+    if (self) return;
+    chatWindow?.webContents.send('update-chat', { twitchMessage: { message, tags } });
+  });
+}
 
-  chatClient.connect();
+async function handleTiktokChat(username: string) {
+  const tiktokChatClient = tikTokService.startClient(username);
+  if (!tiktokChatClient) return;
+  appState.setState({ tiktokChannel: username });
 
-  console.log('Chat connected!');
+  tiktokChatClient.connect();
+  console.log('Tiktok Chat connected!');
+
+  tiktokChatClient.on(WebcastEvent.CHAT, (data) => {
+    chatWindow?.webContents.send('update-chat', { tiktokMessage: data });
+  });
+
+  tiktokChatClient.on(WebcastEvent.GIFT, (data) => {
+    chatWindow?.webContents.send('update-chat', { tiktokMessage: data });
+  });
+}
+
+ipcMain.handle('start-chat', async (_, data: { twitchUserName: string; tiktokUsername: string }) => {
+  if (data.tiktokUsername) {
+    await handleTwitchChat(data.twitchUserName);
+  }
+
+  if (data.tiktokUsername) {
+    await handleTiktokChat(data.tiktokUsername);
+  }
 
   chatWindow = createChatWindow();
   chatWindow.setOpacity(0.6);
-
-  chatClient.on('message', (_, tags, message, self) => {
-    if (self) return;
-    chatWindow?.webContents.send('update-chat', { message, tags });
-  });
 });
 
 ipcMain.handle('stop-chat', () => {
   twitchService.stopTmiClient();
+  tikTokService.stopClient();
   if (chatWindow) {
     chatWindow.close();
     chatWindow = null;
@@ -202,7 +227,6 @@ function createWindow() {
     },
   });
 
-  // Close the chat window if the main window is closed
   win.on('close', () => {
     if (chatWindow) {
       chatWindow.close();
