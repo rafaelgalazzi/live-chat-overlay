@@ -1,16 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { ChatUserstate } from 'tmi.js';
 
-export interface ChatMessage {
+export interface TwitchMessage {
   message: string;
   tags: ChatUserstate;
+}
+
+export interface TiktokMessage {
+  uniqueId: string;
+  comment: string;
 }
 
 type BadgeMap = Record<string, string>;
 type EmoteMap = Record<string, string>;
 
 interface BaseChatProps {
-  messages: ChatMessage[];
+  messages: TwitchMessage[];
   broadcasterId?: string;
 }
 
@@ -19,7 +24,6 @@ export function BaseChat({ messages, broadcasterId }: BaseChatProps) {
   const [emoteMap, setEmoteMap] = useState<EmoteMap>({});
   const chatRef = useRef<HTMLDivElement>(null);
 
-  // Injeta CSS para esconder scrollbar
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
@@ -32,7 +36,6 @@ export function BaseChat({ messages, broadcasterId }: BaseChatProps) {
     };
   }, []);
 
-  // Carrega badges e emotes uma vez
   useEffect(() => {
     (async () => {
       const [badges, emotes] = await Promise.all([
@@ -44,7 +47,6 @@ export function BaseChat({ messages, broadcasterId }: BaseChatProps) {
     })();
   }, [broadcasterId]);
 
-  // Scroll automático quando novas mensagens chegam
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -76,8 +78,6 @@ export function BaseChat({ messages, broadcasterId }: BaseChatProps) {
   );
 }
 
-// -------------------- Funções utilitárias --------------------
-
 function getBadgeImagesFromTags(tags: ChatUserstate, badgeMap: Record<string, string>) {
   const out: string[] = [];
   const badges = tags.badges || {};
@@ -90,7 +90,6 @@ function getBadgeImagesFromTags(tags: ChatUserstate, badgeMap: Record<string, st
 }
 
 function parseMessageWithEmotes(message: string, emoteMap: Record<string, string>) {
-  // Separa por espaços e substitui palavras que são emotes
   return message.split(/\s+/).map((word, idx) => {
     if (emoteMap[word]) {
       return <img key={idx} src={emoteMap[word]} alt={word} style={{ height: '1.2em' }} />;
@@ -162,6 +161,6 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-word',
     flex: 1,
-    gap: 2, // opcional: dá um espacinho entre emotes e texto
+    gap: 2,
   },
 };

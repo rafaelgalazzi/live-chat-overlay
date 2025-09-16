@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { BaseChat, ChatMessage } from '../components/Chat/BaseChat';
+import { BaseChat, TwitchMessage } from '../components/Chat/BaseChat';
 import { useElectron } from '../hooks/useElectron';
 
 export function OverlayChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<TwitchMessage[]>([]);
   const { on } = useElectron();
   const MAX_MESSAGES = 1000;
 
-  const bufferRef = useRef<ChatMessage[]>([]);
+  const bufferRef = useRef<TwitchMessage[]>([]);
 
   useEffect(() => {
-    const chatMessagesListener = on('update-chat', (data: ChatMessage) => {
+    const chatMessagesListener = on('update-chat', (data: TwitchMessage) => {
       bufferRef.current.push(data);
 
       if (bufferRef.current.length > MAX_MESSAGES) {
@@ -24,7 +24,7 @@ export function OverlayChat() {
   }, [on]);
 
   return (
-    <div className='flex h-full'>
+    <div className="flex h-full">
       <BaseChat messages={messages}></BaseChat>
     </div>
   );

@@ -11,6 +11,7 @@ export interface BaseInputProps<T extends FieldValues> {
   label?: string;
   autocomplete?: string;
   error?: string;
+  disabled?: boolean;
 }
 
 export function BaseInput<T extends FieldValues>({
@@ -20,9 +21,10 @@ export function BaseInput<T extends FieldValues>({
   onChange,
   label,
   placeholder,
-  type= 'text',
+  type = 'text',
   autocomplete = 'off',
   error,
+  disabled,
 }: BaseInputProps<T>) {
   const inputProps =
     register && name
@@ -38,9 +40,10 @@ export function BaseInput<T extends FieldValues>({
       <input
         type={type || 'text'}
         placeholder={placeholder || 'Enter text'}
-        className="bg-white p-2 text-dark border rounded-md w-full"
+        className={`p-2 text-dark border rounded-md w-full ${disabled ? 'bg-accent' : 'bg-white'}`}
         aria-invalid={!!error}
         autoComplete={autocomplete}
+        disabled={disabled}
         {...inputProps}
       />
       <div className="mt-1 min-h-[16px] transition-opacity duration-200">

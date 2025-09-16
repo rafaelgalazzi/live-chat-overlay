@@ -8,15 +8,16 @@ import BaseText from '../components/Text/BaseText';
 import { useElectron } from '../hooks/useElectron';
 import { useAuth } from '../hooks/useAuth';
 import { BaseTabs } from '../components/Tab/BaseTab';
+import { BaseCheckbox } from '../components/Form/BaseCheckbox';
 
 export function Dashboard() {
   const [loginBtnLoading, setLoginBtnLoading] = useState(false);
 
   const [twitchUserName, setTwitchUsername] = useState('');
-  const [tiktokUserName, setTiktokUsername] = useState('');
+  const [tiktokUsername, setTiktokUsername] = useState('');
 
-  // const [hasTwitch, setHasTwitch] = useState(true);
-  // const [hasTiktok, setHasTiktok] = useState(false);
+  const [isUsingTwitch, setIsUsingTwitch] = useState(true);
+  const [isUsingTiktok, setIsUsingTiktok] = useState(false);
 
   const [isRunning, setIsRunning] = useState(false);
   const { invoke } = useElectron();
@@ -32,7 +33,10 @@ export function Dashboard() {
 
   const handleStartOverlay = async () => {
     try {
-      await invoke('start-chat', { username: twitchUserName });
+      await invoke('start-chat', {
+        twitchUserName: twitchUserName ?? undefined,
+        tiktokUsername: tiktokUsername ?? undefined,
+      });
     } catch (e) {
       console.log(e);
     } finally {
@@ -79,6 +83,7 @@ export function Dashboard() {
               value={twitchUserName}
               onChange={twitchNameInputHandler}
               placeholder="Enter the Twitch username"
+              disabled={!isUsingTwitch}
             ></BaseInput>
           </BaseForm>
         </div>
@@ -106,17 +111,30 @@ export function Dashboard() {
       </BaseText>
       <BaseForm>
         <BaseInput
-          value={tiktokUserName}
+          value={tiktokUsername}
           onChange={tiktokNameInputHandler}
           placeholder="Enter the Tiktok username"
+          disabled={!isUsingTiktok}
         ></BaseInput>
       </BaseForm>
+    </>
+  );
+
+  const settingsTab = (
+    <>
+      <BaseText className="text-2xl">Chats do you want to use:</BaseText>
+      <BaseText className="text-sm mb-5">You can select both to merge:</BaseText>
+      <div className="flex justify-center">
+        <BaseCheckbox className="mx-2" label="Twitch" checked={isUsingTwitch} onChange={setIsUsingTwitch} />
+        <BaseCheckbox className="mx-2" label="Tiktok" checked={isUsingTiktok} onChange={setIsUsingTiktok} />
+      </div>
     </>
   );
 
   const tabs = [
     { label: 'Twitch', content: twitchTab },
     { label: 'Tiktok', content: tiktokTab },
+    { label: 'Settings', content: settingsTab },
   ];
 
   return (

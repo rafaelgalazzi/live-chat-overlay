@@ -148,12 +148,12 @@ function createChatWindow(route = '/overlay') {
   return chatWindow;
 }
 
-ipcMain.handle('start-chat', async (_, data: { username: string }) => {
-  appState.setState({ channel: data.username });
-  const chatClient = twitchService.startTmiClient(data.username);
+ipcMain.handle('start-chat', async (_, data: { twitchUserName: string; tiktokUsername: string }) => {
+  appState.setState({ channel: data.twitchUserName });
+  const chatClient = twitchService.startTmiClient(data.twitchUserName);
   if (!chatClient) return;
 
-  const broadcasterId = await twitchService.getBroadcasterId(data.username);
+  const broadcasterId = await twitchService.getBroadcasterId(data.twitchUserName);
   if (broadcasterId) appState.setState({ broadcasterId });
 
   chatClient.connect();
