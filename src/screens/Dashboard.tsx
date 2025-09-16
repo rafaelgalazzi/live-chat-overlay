@@ -6,18 +6,21 @@ import { BaseInput } from '../components/Form/BaseInput';
 import { BaseLayout } from '../components/Layout/BaseLayout';
 import BaseText from '../components/Text/BaseText';
 import { useElectron } from '../hooks/useElectron';
-import { BaseCheckbox } from '../components/Form/BaseCheckbox';
 import { useAuth } from '../hooks/useAuth';
+import { BaseTabs } from '../components/Tab/BaseTab';
 
 export function Dashboard() {
+  const [loginBtnLoading, setLoginBtnLoading] = useState(false);
+
   const [twitchUserName, setTwitchUsername] = useState('');
   const [tiktokUserName, setTiktokUsername] = useState('');
-  const [hasTwitch, setHasTwitch] = useState(true);
-  const [hasTiktok, setHasTiktok] = useState(false);
+
+  // const [hasTwitch, setHasTwitch] = useState(true);
+  // const [hasTiktok, setHasTiktok] = useState(false);
 
   const [isRunning, setIsRunning] = useState(false);
   const { invoke } = useElectron();
-  const { verifyAuth } = useAuth();
+  const { verifyAuth, isAuthenticated } = useAuth();
 
   const twitchNameInputHandler = (name: string) => {
     setTwitchUsername(name);
@@ -47,67 +50,88 @@ export function Dashboard() {
     }
   };
 
-  function handleToggleTwitch() {
-    setHasTwitch(!hasTwitch);
-  }
-
-  function handleToggleTiktok() {
-    setHasTiktok(!hasTiktok);
+  async function handleAuthentication() {
+    setLoginBtnLoading(true);
+    try {
+      await invoke('oauth');
+      await verifyAuth();
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoginBtnLoading(false);
+    }
   }
 
   useEffect(() => {
     verifyAuth();
   });
 
+  const twitchTab = (
+    <>
+      {isAuthenticated ? (
+        <div className="mb-5">
+          <BaseText className="text-2xl mb-5">Enter the Twitch Username:</BaseText>
+          <BaseText className="text-sm mb-5">
+            The usernames are used to find whose chat you want to put in your overlay!
+          </BaseText>
+          <BaseForm>
+            <BaseInput
+              value={twitchUserName}
+              onChange={twitchNameInputHandler}
+              placeholder="Enter the Twitch username"
+            ></BaseInput>
+          </BaseForm>
+        </div>
+      ) : (
+        <div className="m-2">
+          <BaseText className="text-2xl mb-5">Authenticate on twitch:</BaseText>
+          <BaseText className="text-sm mb-5">
+            You need to be Authenticated on Twitch to have access to the chat!
+          </BaseText>
+          <div className="flex justify-center mb-5">
+            <BaseButton onClick={handleAuthentication} loading={loginBtnLoading}>
+              Login on Twitch
+            </BaseButton>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  const tiktokTab = (
+    <>
+      <BaseText className="text-2xl mb-5">Enter the Tiktok username:</BaseText>
+      <BaseText className="text-sm mb-5">
+        The usernames are used to find whose chat you want to put in your overlay!
+      </BaseText>
+      <BaseForm>
+        <BaseInput
+          value={tiktokUserName}
+          onChange={tiktokNameInputHandler}
+          placeholder="Enter the Tiktok username"
+        ></BaseInput>
+      </BaseForm>
+    </>
+  );
+
+  const tabs = [
+    { label: 'Twitch', content: twitchTab },
+    { label: 'Tiktok', content: tiktokTab },
+  ];
+
   return (
     <BaseLayout>
-      <BaseCard className="min-h-[400px] flex flex-col justify-center">
+      <BaseCard className="min-h-[400px] flex flex-col justify-between">
         <div className="flex justify-center">
-          <BaseCheckbox className="p-2" label="Twitch" checked={hasTwitch} onChange={handleToggleTwitch} />
-          <BaseCheckbox className="p-2" label="Tiktok" checked={hasTiktok} onChange={handleToggleTiktok} />
+          <BaseTabs tabs={tabs} />
         </div>
-        <div>
-          <BaseText className="text-2xl mb-5">Enter the Username:</BaseText>
-          <BaseText className="text-sm mb-5">
-            The usernames are used to find whose chat you want to put in your overlay! Using both will mix the chats
-            making easier see.
-          </BaseText>
-        </div>
-        {hasTwitch && (
-          <>
-            <BaseForm>
-              <BaseInput
-                value={twitchUserName}
-                onChange={twitchNameInputHandler}
-                placeholder="Enter the Twitch username"
-              ></BaseInput>
-            </BaseForm>
-          </>
-        )}
-        {hasTiktok && (
-          <>
-            <BaseForm>
-              <BaseInput
-                value={tiktokUserName}
-                onChange={tiktokNameInputHandler}
-                placeholder="Enter the Tiktok username"
-              ></BaseInput>
-            </BaseForm>
-          </>
-        )}
         <div className="flex justify-center my-1">
-          <div>
-            <div className="my-2">
-              <BaseButton onClick={handleStartOverlay} disabled={!twitchUserName.length || isRunning}>
-                Start Overlay
-              </BaseButton>
-            </div>
-            <div className="my-2">
-              <BaseButton onClick={handleStopOverlay} disabled={!isRunning}>
-                Stop Overlay
-              </BaseButton>
-            </div>
-          </div>
+          <BaseButton className="m-2" onClick={handleStartOverlay} disabled={!twitchUserName.length || isRunning}>
+            Start Overlay
+          </BaseButton>
+          <BaseButton className="m-2" onClick={handleStopOverlay} disabled={!isRunning}>
+            Stop Overlay
+          </BaseButton>
         </div>
       </BaseCard>
     </BaseLayout>

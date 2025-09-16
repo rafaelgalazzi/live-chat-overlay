@@ -9,6 +9,7 @@ export interface BaseCheckboxProps<T extends FieldValues> {
   label?: string;
   error?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 /**
@@ -23,6 +24,7 @@ export function BaseCheckbox<T extends FieldValues>({
   label,
   error,
   className = '',
+  disabled,
 }: BaseCheckboxProps<T>) {
   // Determina se vai usar register do react-hook-form ou props controladas
   const inputProps =
@@ -35,7 +37,13 @@ export function BaseCheckbox<T extends FieldValues>({
 
   return (
     <div className={`py-2 flex items-start gap-2 ${className}`}>
-      <input type="checkbox" className="w-4 h-4 mt-1 border rounded cursor-pointer" aria-invalid={!!error} {...inputProps} />
+      <input
+        type="checkbox"
+        className="w-4 h-4 mt-1 border rounded cursor-pointer"
+        disabled={disabled}
+        aria-invalid={!!error}
+        {...inputProps}
+      />
       <div className="flex-1">
         {label && <label className="base-input-label">{label}</label>}
         <div className="mt-1 min-h-[16px] transition-opacity duration-200">

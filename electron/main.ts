@@ -87,6 +87,11 @@ ipcMain.handle('oauth', async () => {
         win.close();
       }
     });
+
+    win.on('closed', async () => {
+      httpServer.stop();
+      resolve(true);
+    });
   });
 });
 
