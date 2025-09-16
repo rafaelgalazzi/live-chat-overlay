@@ -13,7 +13,6 @@ A lightweight, customizable overlay application that displays live chat from mul
 - 🔧 **Easy Setup**: Simple authentication and channel connection
 - ⚡ **Real-time Updates**: Messages appear instantly as they're sent
 - 🎭 **Emote Support**: Displays Twitch emotes and badges correctly
-- 🛠️ **Electron Desktop App**: Runs independently of your browser
 
 ## Tech Stack
 
