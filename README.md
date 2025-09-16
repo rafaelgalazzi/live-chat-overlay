@@ -1,16 +1,19 @@
 # Live Chat Overlay
 
-A lightweight, customizable overlay application that displays live chat on top of your games or other applications. Perfect for streamers who want to monitor their chat while gaming or working with just one monitor.
+A lightweight, customizable overlay application that displays live chat from multiple platforms (Twitch and TikTok) on top of your games or other applications. Perfect for streamers who want to monitor their chat while gaming or working with just one monitor.
 
 ![Project Preview](./public/preview.png)
 
 ## Features
 
 - 🎮 **Always-On-Top Overlay**: Keeps chat visible above your games or applications
-- 🖥️ **Electron Desktop App**: Runs independently of your browser
+- 🖥️ **Multi-Platform Support**: Connect to both Twitch and TikTok simultaneously
+- 🖼️ **Transparent Overlay**: Non-intrusive chat display that doesn't interfere with your content
 - 🎨 **Customizable Appearance**: Adjust size, position, and transparency
-- 🔧 **Easy Setup**: Connect with your Twitch channel in seconds
+- 🔧 **Easy Setup**: Simple authentication and channel connection
 - ⚡ **Real-time Updates**: Messages appear instantly as they're sent
+- 🎭 **Emote Support**: Displays Twitch emotes and badges correctly
+- 🛠️ **Electron Desktop App**: Runs independently of your browser
 
 ## Tech Stack
 
@@ -20,6 +23,7 @@ A lightweight, customizable overlay application that displays live chat on top o
 - **[Vite](https://vitejs.dev/)** - Fast build tool and development server
 - **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework for styling
 - **[tmi.js](https://tmijs.com/)** - Twitch Messaging Interface library for connecting to Twitch chat
+- **[tiktok-live-connector](https://github.com/instabot210/tiktok-live-connector)** - Library for connecting to TikTok live streams
 
 ## Prerequisites
 
@@ -45,6 +49,14 @@ A lightweight, customizable overlay application that displays live chat on top o
    yarn install
    ```
 
+4. Create a `.env` file based on `.env.example` and fill in your Twitch API credentials:
+   ```
+   TWITCH_CLIENT_ID=your_twitch_client_id
+   TWITCH_CLIENT_SECRET=your_twitch_client_secret
+   TWITCH_APP_NAME=your_app_name
+   ELECTRON_STORE_KEY=your_encryption_key
+   ```
+
 ## Development
 
 To start the development server:
@@ -67,21 +79,21 @@ npm run build
 yarn build
 ```
 
-This will create distributable packages for your platform.
+This will create distributable packages for your platform in the `dist` folder.
 
 ## Usage
 
 1. Launch the application
 2. Click on "Login" to authenticate with Twitch
-3. Enter your Twitch channel name
+3. Enter your Twitch channel name and/or TikTok username
 4. Adjust the overlay position and settings as needed
-5. Start gaming while keeping chat visible!
+5. Start streaming while keeping chat visible!
 
 ## Configuration
 
 The application uses electron-store for configuration management. Settings are stored in the following locations:
 
-- **Windows**: `%APPDATA%\live-chat-overlay\`
+- **Windows**: `%APPDATA%\\live-chat-overlay\\`
 - **macOS**: `~/Library/Application Support/live-chat-overlay/`
 - **Linux**: `~/.config/live-chat-overlay/`
 
@@ -101,6 +113,6 @@ This project is licensed under the MIT License.
 
 ## Acknowledgments
 
-- Thanks to the Twitch API for making this project possible
+- Thanks to Twitch and TikTok APIs for making this project possible
 - Inspired by streamers who need better chat monitoring solutions
 - Built with the amazing open-source tools listed in the tech stack
