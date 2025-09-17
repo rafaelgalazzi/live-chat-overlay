@@ -6,13 +6,13 @@ A lightweight, customizable overlay application that displays live chat from mul
 
 ## Features
 
-- 🎮 **Always-On-Top Overlay**: Keeps chat visible above your games or applications
-- 🖥️ **Multi-Platform Support**: Connect to both Twitch and TikTok simultaneously
-- 🖼️ **Transparent Overlay**: Non-intrusive chat display that doesn't interfere with your content
-- 🎨 **Customizable Appearance**: Adjust size, position, and transparency
-- 🔧 **Easy Setup**: Simple authentication and channel connection
-- ⚡ **Real-time Updates**: Messages appear instantly as they're sent
-- 🎭 **Emote Support**: Displays Twitch emotes and badges correctly
+- **Always-On-Top Overlay**: Keeps chat visible above your games or applications
+- **Multi-Platform Support**: Connect to both Twitch and TikTok simultaneously
+- **Transparent Overlay**: Non-intrusive chat display that doesn't interfere with your content
+- **Customizable Appearance**: Adjust size, position, and transparency
+- **Easy Setup**: Simple authentication and channel connection
+- **Real-time Updates**: Messages appear instantly as they're sent
+- **Emote Support**: Displays Twitch emotes and badges correctly
 
 ## Tech Stack
 
@@ -112,6 +112,5 @@ This project is licensed under the MIT License.
 
 ## Acknowledgments
 
-- Thanks to Twitch and TikTok APIs for making this project possible
 - Inspired by streamers who need better chat monitoring solutions
 - Built with the amazing open-source tools listed in the tech stack
