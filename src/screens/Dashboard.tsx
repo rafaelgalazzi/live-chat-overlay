@@ -22,12 +22,21 @@ export function Dashboard() {
   const { verifyAuth, isAuthenticated } = useAuth();
 
   const twitchNameInputHandler = (name: string) => {
-    console.log('aaa');
     setTwitchUsername(name);
   };
 
   const tiktokNameInputHandler = (name: string) => {
     setTiktokUsername(name);
+  };
+
+  const handleSetIsUsingTwitch = (state: boolean) => {
+    if (!state) setTwitchUsername('');
+    setIsUsingTwitch(state);
+  };
+
+  const handleSetIsUsingTiktok = (state: boolean) => {
+    if (!state) setTiktokUsername('');
+    setIsUsingTiktok(state);
   };
 
   const handleStartOverlay = async () => {
@@ -99,8 +108,8 @@ export function Dashboard() {
         <SettingsTab
           isUsingTwitch={isUsingTwitch}
           isUsingTiktok={isUsingTiktok}
-          setIsUsingTwitch={setIsUsingTwitch}
-          setIsUsingTiktok={setIsUsingTiktok}
+          setIsUsingTwitch={handleSetIsUsingTwitch}
+          setIsUsingTiktok={handleSetIsUsingTiktok}
         />
       ),
     },
