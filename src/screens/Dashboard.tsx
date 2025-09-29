@@ -42,7 +42,7 @@ export function Dashboard() {
   const handleStartOverlay = async () => {
     try {
       await invoke('start-chat', {
-        twitchUserName: twitchUsername ?? undefined,
+        twitchUsername: twitchUsername ?? undefined,
         tiktokUsername: tiktokUsername ?? undefined,
       });
     } catch (e) {

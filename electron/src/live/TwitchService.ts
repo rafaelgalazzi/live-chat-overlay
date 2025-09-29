@@ -96,14 +96,13 @@ export class TwitchService {
     }
 
     this.tmiClient = new tmi.Client({
-      options: { debug: false },
+      options: { debug: true },
       identity: {
         username: this.appName,
         password: `oauth:${this.authService.getAuthToken()}`,
       },
       channels: [username],
     });
-
     return this.tmiClient;
   }
 

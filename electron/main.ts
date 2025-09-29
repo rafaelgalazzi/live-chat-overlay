@@ -180,9 +180,9 @@ async function handleTiktokChat(username: string) {
   });
 }
 
-ipcMain.handle('start-chat', async (_, data: { twitchUserName: string; tiktokUsername: string }) => {
-  if (data.tiktokUsername) {
-    await handleTwitchChat(data.twitchUserName);
+ipcMain.handle('start-chat', async (_, data: { twitchUsername: string; tiktokUsername: string }) => {
+  if (data.twitchUsername) {
+    await handleTwitchChat(data.twitchUsername);
   }
 
   if (data.tiktokUsername) {
